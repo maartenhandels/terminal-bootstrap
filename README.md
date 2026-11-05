@@ -8,7 +8,7 @@ Rebuilds my iTerm2 + zsh setup on a new Mac. No secrets, passwords or keys are s
 git clone <this repo> ~/terminal-bootstrap   # or copy the folder over
 cd ~/terminal-bootstrap
 ./install.sh            # core terminal setup
-./install.sh --extras   # also installs dev tools (postgres, terraform, awscli, ...)
+./install.sh --extras   # also installs optional tools (pandoc, nmap, postgres, terraform, awscli, ...)
 ```
 
 Run it with iTerm2 **closed** (run it from macOS Terminal.app), then open iTerm2.
@@ -19,7 +19,7 @@ Run it with iTerm2 **closed** (run it from macOS Terminal.app), then open iTerm2
 |---|---|
 | iTerm2 | Default profile, Snazzy colors, Hack Nerd Font Mono 12, key mappings, gestures |
 | Shell | oh-my-zsh, powerlevel10k (classic style), `git` plugin |
-| Tools | Homebrew packages from `Brewfile` (gh, git-lfs, wget, pandoc, nmap, pyenv, ...) |
+| Tools | Homebrew packages from `Brewfile`: gh, git-lfs, pyenv, wget |
 | Runtimes | pyenv + pyenv-virtualenv, nvm |
 | Dotfiles | `.zshrc`, `.zprofile`, `.p10k.zsh`, `.aliases`, `.gitconfig` (symlinked to this folder) |
 

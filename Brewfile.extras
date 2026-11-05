@@ -1,4 +1,13 @@
-# Dev / project tools from the old laptop (optional: ./install.sh --extras)
+# Optional tools from the old laptop (./install.sh --extras)
+
+# General command line utilities
+brew "make"        # GNU make, installed as gmake
+brew "pandoc"
+brew "nmap"
+brew "python@3.12" # Homebrew Python; pyenv usually covers this
+brew "tcl-tk"      # only needed for tkinter in pyenv-built Pythons
+
+# Dev / project tools
 tap "ngrok/ngrok"
 brew "awscli"
 brew "docker-compose"
