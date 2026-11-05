@@ -23,21 +23,51 @@ backup() { mkdir -p "$BACKUP"; cp -p "$1" "$BACKUP/"; }
 MARK="# Installed by terminal-bootstrap. Safe to edit; this file no longer depends on the repo."
 ours() { [ -L "$1" ] || head -1 "$1" 2>/dev/null | grep -qF "$MARK"; }  # a file this script put there earlier
 
-# Copy an existing zsh file into a *.local file so its settings keep loading.
-# Lines that would load oh-my-zsh / powerlevel10k a second time become no-ops.
-migrate_zsh() {  # migrate_zsh <old file> <local file>
-  local old="$1" dst="$2"
-  { [ -f "$old" ] && ! ours "$old"; } || return 0
-  if [ -s "$dst" ]; then warn "$dst already exists; old $(basename "$old") is only in the backup folder"; return 0; fi
-  { echo "# Moved here from your previous $(basename "$old") by terminal-bootstrap on $(date +%F)."
-    echo "# Review it: some lines may now duplicate what the bootstrap .zshrc/.zprofile already does."
-    sed -E '/^[[:space:]]*ZSH_THEME=/s/^/: # [bootstrap: handled by main .zshrc] /;
-            /(source|\.)[[:space:]].*(oh-my-zsh\.sh|p10k)/s/^/: # [bootstrap: handled by main .zshrc] /' "$old"
-  } > "$dst"
-  if ! zsh -n "$dst" 2>/dev/null; then
-    sed -i '' 's/^/# /' "$dst"; warn "$dst had syntax issues after migration, so it is fully commented out; please review"
+# .zshrc / .zprofile: the repo's settings live in one marked block inside your
+# own file. Everything outside the block is yours and is never rewritten.
+BEGIN="# >>> terminal-bootstrap >>> (re-running install.sh replaces this block; edit outside it)"
+END="# <<< terminal-bootstrap <<<"
+
+# Prints the existing file with the block placed where it used to load
+# oh-my-zsh (or at the end). Lines that would load oh-my-zsh, a theme or
+# powerlevel10k a second time become no-ops, so nothing loads twice.
+place_block() {  # place_block <block file> <existing file>
+  awk -v f="$1" '
+    function emit(  l) { while ((getline l < f) > 0) print l; done = 1 }
+    /^[[:space:]]*#/ { print; next }               # leave comments alone
+    !done && /(source|\.)[[:space:]].*oh-my-zsh\.sh/ {
+      print "# [terminal-bootstrap] oh-my-zsh now loads in the block below. Was: " $0; emit(); next }
+    /^[[:space:]]*ZSH_THEME=/ || /(source|\.)[[:space:]].*(oh-my-zsh\.sh|p10k)/ {
+      print ": # [terminal-bootstrap: handled by its block] " $0; next }
+    { print }
+    END { if (!done) { print ""; emit() } }' "$2"
+}
+
+install_block() {  # install_block <source in repo> <target in home>
+  local src="$DIR/$1" dst="$2" block new how
+  block="$(mktemp)"; new="$(mktemp)"
+  { echo "$BEGIN"; cat "$src"; echo "$END"; } > "$block"
+  [ -L "$dst" ] && rm "$dst"
+  if [ ! -s "$dst" ]; then
+    cp "$block" "$new"; how="wrote"
+  elif grep -qxF "$BEGIN" "$dst"; then             # re-run: swap in the current block
+    awk -v b="$BEGIN" -v e="$END" -v f="$block" '
+      $0 == b { while ((getline l < f) > 0) print l; skip = 1; next }
+      skip && $0 == e { skip = 0; next }
+      !skip' "$dst" > "$new"; how="updated block in"
+  elif head -1 "$dst" | grep -qF "$MARK"; then     # whole file written by an older version
+    backup "$dst"; cp "$block" "$new"; how="rewrote"
+    local loc="${dst##*/}.local"                   # that version kept machine settings in ~/.zshrc.local etc.
+    [ -s "$HOME/$loc" ] && printf '\n[ -f ~/%s ] && source ~/%s\n' "$loc" "$loc" >> "$new"
+  else                                             # this machine's own file: keep it, add the block
+    backup "$dst"; place_block "$block" "$dst" > "$new"; how="added block to"
   fi
-  echo "  previous $(basename "$old") -> $dst (still loaded)"
+  if ! zsh -n "$new" 2>/dev/null; then
+    warn "$dst would not parse after the change, so it was left as is; please add the block by hand"
+  else
+    cat "$new" > "$dst"; echo "  $how $dst"
+  fi
+  rm -f "$block" "$new"
 }
 
 put() {  # put <source in repo> <target in home>: copies the file (no link back to this folder)
@@ -46,6 +76,22 @@ put() {  # put <source in repo> <target in home>: copies the file (no link back 
   elif [ -f "$dst" ] && ! ours "$dst"; then backup "$dst"
   fi
   { echo "$MARK"; cat "$src"; } > "$dst"; echo "  wrote $dst"
+}
+
+# Download an install script completely, then run it with the given command.
+# Stops the whole run if the download fails (e.g. blocked by a company proxy),
+# instead of silently running an empty script.
+run_remote() {  # run_remote <url> <command...>
+  local url="$1" f; shift
+  f="$(mktemp)"
+  if ! curl -fsSL "$url" -o "$f" || [ ! -s "$f" ]; then
+    rm -f "$f"
+    echo "Download failed: $url"
+    echo "Check your network/proxy and re-run, or use --dotfiles-only."
+    exit 1
+  fi
+  "$@" "$f" || { local rc=$?; rm -f "$f"; return "$rc"; }
+  rm -f "$f"
 }
 
 find_brew() { for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do [ -x "$b" ] && { echo "$b"; return; }; done; }
@@ -58,7 +104,7 @@ if [ "$DOTFILES_ONLY" = 0 ]; then
   BREW="$(find_brew || true)"
   if [ -z "$BREW" ]; then
     if id -Gn | tr ' ' '\n' | grep -qx admin; then
-      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      run_remote https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh /bin/bash
       BREW="$(find_brew)"
     else
       warn "No Homebrew and this account is not an administrator. Skipping Homebrew packages."
@@ -71,12 +117,13 @@ if [ "$DOTFILES_ONLY" = 0 ]; then
   fi
 
   say "oh-my-zsh + powerlevel10k"
-  [ -d "$HOME/.oh-my-zsh" ] || RUNZSH=no KEEP_ZSHRC=yes CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  [ -d "$HOME/.oh-my-zsh" ] || run_remote https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh \
+    env RUNZSH=no KEEP_ZSHRC=yes CHSH=no sh
   P10K="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
   [ -d "$P10K" ] || git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$P10K"
 
   say "nvm + pyenv-virtualenv"
-  [ -d "$HOME/.nvm" ] || PROFILE=/dev/null bash -c "$(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh)"
+  [ -d "$HOME/.nvm" ] || run_remote https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh env PROFILE=/dev/null bash
   if command -v pyenv >/dev/null; then
     [ -d "$(pyenv root)/plugins/pyenv-virtualenv" ] || git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
   else
@@ -84,14 +131,9 @@ if [ "$DOTFILES_ONLY" = 0 ]; then
   fi
 fi
 
-say "Keeping this machine's existing settings"
-migrate_zsh "$HOME/.zshrc"    "$HOME/.zshrc.local"
-migrate_zsh "$HOME/.zprofile" "$HOME/.zprofile.local"
-touch "$HOME/.zshrc.local"
-
 say "Dotfiles (copied; you can delete this folder afterwards)"
-put shell/zshrc    "$HOME/.zshrc"
-put shell/zprofile "$HOME/.zprofile"
+install_block shell/zshrc    "$HOME/.zshrc"
+install_block shell/zprofile "$HOME/.zprofile"
 put shell/p10k.zsh "$HOME/.p10k.zsh"
 
 say "Git preferences (your ~/.gitconfig, name and email are left alone)"
@@ -116,7 +158,7 @@ if [ "$NO_ITERM" = 0 ]; then
 fi
 
 say "Done. Open a new iTerm2 window. You can now delete $DIR if you like."
-echo "  Machine-only / work / secret settings: ~/.zshrc.local, ~/.zprofile.local"
+echo "  Your own settings go in ~/.zshrc / ~/.zprofile, outside the terminal-bootstrap block."
 if [ -d "$BACKUP" ]; then
   echo "  Originals backed up to $BACKUP"
   if [ -f "$BACKUP/iterm2-prefs.plist" ]; then

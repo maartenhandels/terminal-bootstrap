@@ -15,7 +15,7 @@ Run it from macOS Terminal.app with iTerm2 **closed**, then open iTerm2. Re-runn
 
 | Option | Effect |
 |---|---|
-| `--dotfiles-only` | Skip all downloads/installs (Xcode tools, Homebrew, oh-my-zsh, nvm); only link dotfiles |
+| `--dotfiles-only` | Skip all downloads/installs (Xcode tools, Homebrew, oh-my-zsh, nvm); only copy dotfiles |
 | `--no-iterm` | Leave iTerm2 settings untouched |
 
 ## What it sets up
@@ -26,21 +26,27 @@ Run it from macOS Terminal.app with iTerm2 **closed**, then open iTerm2. Re-runn
 | Shell | oh-my-zsh, powerlevel10k (classic style), `git` plugin |
 | Tools | `Brewfile`: iTerm2, Hack Nerd Font, gh, git-lfs, pyenv, wget |
 | Runtimes | pyenv + pyenv-virtualenv, nvm |
-| Dotfiles | `.zshrc`, `.zprofile`, `.p10k.zsh` (plain copies; this folder can be deleted afterwards) |
+| Dotfiles | A marked block in `.zshrc` and `.zprofile`, plus `.p10k.zsh` (copies; this folder can be deleted afterwards) |
 | Git | Enables git-lfs; sets `init.defaultBranch=main` and `pager.branch=false` only if unset. Your `~/.gitconfig`, name and email are never replaced |
 
 ## On a work laptop (or any machine with existing settings)
 
 Nothing is thrown away:
 
-- Your previous `.zshrc` / `.zprofile` are moved into `~/.zshrc.local` and
-  `~/.zprofile.local`, which keep loading. Only lines that would load oh-my-zsh or
-  powerlevel10k a second time are disabled. Review those files once after installing.
-- Current iTerm2 settings are exported before the import; the script prints the undo command.
+- Your existing `.zshrc` / `.zprofile` stay where they are. The script adds its settings as one
+  block between `# >>> terminal-bootstrap >>>` and `# <<< terminal-bootstrap <<<`, placed where
+  your file loaded oh-my-zsh (or at the end). Re-running only replaces that block.
+- Lines in your file that would load oh-my-zsh, a theme or powerlevel10k a second time are
+  turned into comments. Your `plugins=(...)` list is kept and `git` is added to it.
+  Review the file once after installing.
+- iTerm2 settings are replaced by the ones in this repo. Your current ones are exported
+  first and the script prints the undo command; use `--no-iterm` to keep them.
 - Originals go to `~/.terminal-bootstrap-backup/<timestamp>/`.
-- No SSH agent is started if one is already running (macOS or a company tool).
 - Homebrew is found on Apple Silicon or Intel. Without admin rights, Homebrew steps are skipped.
+- If an install script can't be downloaded (e.g. blocked by a company proxy), the run stops
+  with a message instead of continuing half-installed.
 - `--dotfiles-only` avoids downloading install scripts, if your company doesn't allow that.
+  The shell still starts cleanly without oh-my-zsh; you just get the plain prompt.
 
 Check your company's policy on installing tools and cloning personal repositories first.
 
@@ -50,10 +56,12 @@ Check your company's policy on installing tools and cloning personal repositorie
 - Window positions, update-check state, install IDs and other machine-specific iTerm2 state
 - `~/.ssh`, `~/.aws`, `~/.npmrc`, `~/.docker`, `~/.config/gh`, `~/.gitconfig`, shell history
 
-Secrets and machine-only settings go in `~/.zshrc.local` / `~/.zprofile.local`, never in this repo.
+Secrets and machine-only settings go in `~/.zshrc` / `~/.zprofile` outside the block (extra
+oh-my-zsh plugins as `plugins=(...)` above it), never in this repo.
 
 ## Updating the snapshot
 
-The installed files are plain copies, so editing `~/.zshrc` on a laptop doesn't change this repo.
-To update the snapshot, copy the changed file back into `shell/` (or re-export iTerm2 settings into
+The installed settings are copies, so editing `~/.zshrc` on a laptop doesn't change this repo.
+To update the snapshot, copy what's between the block markers back into `shell/zshrc` or
+`shell/zprofile` (or `~/.p10k.zsh` into `shell/p10k.zsh`, or re-export iTerm2 settings into
 `iterm/`), then commit and push.

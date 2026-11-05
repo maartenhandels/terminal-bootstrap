@@ -3,6 +3,3 @@ for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
   [ -x "$_brew" ] && { eval "$("$_brew" shellenv)"; break; }
 done
 unset _brew
-
-# This machine's own settings
-[ -f ~/.zprofile.local ] && source ~/.zprofile.local

@@ -1,19 +1,18 @@
-# Powerlevel10k instant prompt (keep at the top)
+# Powerlevel10k instant prompt
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# oh-my-zsh with the powerlevel10k theme
-export ZSH="$HOME/.oh-my-zsh"
+# oh-my-zsh with the powerlevel10k theme. Plugins you list above this block
+# (plugins=(...)) are kept; git is always added.
+export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 ZSH_THEME="powerlevel10k/powerlevel10k"
-plugins=(git)
-source $ZSH/oh-my-zsh.sh
+typeset -U plugins; plugins=(git $plugins)
+# Skipped if oh-my-zsh isn't installed (e.g. after --dotfiles-only on a fresh Mac)
+[[ -r $ZSH/oh-my-zsh.sh ]] && source $ZSH/oh-my-zsh.sh
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
-# pyenv (Python versions) and nvm (Node versions)
-command -v pyenv >/dev/null && eval "$(pyenv init - zsh)"
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
-
-# This machine's own settings
-[ -f ~/.zshrc.local ] && source ~/.zshrc.local
+# pyenv (Python versions) and nvm (Node versions), unless already set up above
+(( $+functions[pyenv] )) || { command -v pyenv >/dev/null && eval "$(pyenv init - zsh)"; }
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+(( $+functions[nvm] )) || { [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"; }
