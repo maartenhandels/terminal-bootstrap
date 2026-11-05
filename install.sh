@@ -20,12 +20,14 @@ done
 say()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 warn() { printf '  \033[1;33m! %s\033[0m\n' "$*"; }
 backup() { mkdir -p "$BACKUP"; cp -p "$1" "$BACKUP/"; }
+MARK="# Installed by terminal-bootstrap. Safe to edit; this file no longer depends on the repo."
+ours() { [ -L "$1" ] || head -1 "$1" 2>/dev/null | grep -qF "$MARK"; }  # a file this script put there earlier
 
 # Copy an existing zsh file into a *.local file so its settings keep loading.
 # Lines that would load oh-my-zsh / powerlevel10k a second time become no-ops.
 migrate_zsh() {  # migrate_zsh <old file> <local file>
   local old="$1" dst="$2"
-  { [ -f "$old" ] && [ ! -L "$old" ]; } || return 0
+  { [ -f "$old" ] && ! ours "$old"; } || return 0
   if [ -s "$dst" ]; then warn "$dst already exists; old $(basename "$old") is only in the backup folder"; return 0; fi
   { echo "# Moved here from your previous $(basename "$old") by terminal-bootstrap on $(date +%F)."
     echo "# Review it: some lines may now duplicate what the bootstrap .zshrc/.zprofile already does."
@@ -38,10 +40,12 @@ migrate_zsh() {  # migrate_zsh <old file> <local file>
   echo "  previous $(basename "$old") -> $dst (still loaded)"
 }
 
-link() {  # link <source in repo> <target in home>; backs up anything already there
+put() {  # put <source in repo> <target in home>: copies the file (no link back to this folder)
   local src="$DIR/$1" dst="$2"
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then backup "$dst"; rm "$dst"; fi
-  ln -sfn "$src" "$dst"; echo "  $dst -> $src"
+  if [ -L "$dst" ]; then rm "$dst"
+  elif [ -f "$dst" ] && ! ours "$dst"; then backup "$dst"
+  fi
+  { echo "$MARK"; cat "$src"; } > "$dst"; echo "  wrote $dst"
 }
 
 find_brew() { for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do [ -x "$b" ] && { echo "$b"; return; }; done; }
@@ -83,18 +87,12 @@ fi
 say "Keeping this machine's existing settings"
 migrate_zsh "$HOME/.zshrc"    "$HOME/.zshrc.local"
 migrate_zsh "$HOME/.zprofile" "$HOME/.zprofile.local"
-if [ -f "$HOME/.aliases" ] && [ ! -L "$HOME/.aliases" ]; then
-  { echo; echo "# Previous ~/.aliases"; cat "$HOME/.aliases"; } >> "$HOME/.zshrc.local"
-  echo "  previous .aliases -> appended to ~/.zshrc.local"
-fi
 touch "$HOME/.zshrc.local"
 
-say "Dotfiles"
-link shell/zshrc    "$HOME/.zshrc"
-link shell/zprofile "$HOME/.zprofile"
-link shell/p10k.zsh "$HOME/.p10k.zsh"
-link shell/aliases  "$HOME/.aliases"
-mkdir -p "$HOME/.npm-global"
+say "Dotfiles (copied; you can delete this folder afterwards)"
+put shell/zshrc    "$HOME/.zshrc"
+put shell/zprofile "$HOME/.zprofile"
+put shell/p10k.zsh "$HOME/.p10k.zsh"
 
 say "Git preferences (your ~/.gitconfig, name and email are left alone)"
 command -v git-lfs >/dev/null && git lfs install >/dev/null && echo "  git-lfs enabled"
@@ -117,7 +115,7 @@ if [ "$NO_ITERM" = 0 ]; then
   fi
 fi
 
-say "Done. Open a new iTerm2 window."
+say "Done. Open a new iTerm2 window. You can now delete $DIR if you like."
 echo "  Machine-only / work / secret settings: ~/.zshrc.local, ~/.zprofile.local"
 if [ -d "$BACKUP" ]; then
   echo "  Originals backed up to $BACKUP"

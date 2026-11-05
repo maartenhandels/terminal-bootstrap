@@ -1,39 +1,19 @@
-# Powerlevel10k instant prompt (keep near the top)
+# Powerlevel10k instant prompt (keep at the top)
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# oh-my-zsh + powerlevel10k
+# oh-my-zsh with the powerlevel10k theme
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(git)
 source $ZSH/oh-my-zsh.sh
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
-# Python (pyenv)
-export PATH="$HOME/.pyenv/bin:$HOME/.dotnet:$PATH"
-if command -v pyenv >/dev/null; then
-  eval "$(pyenv init --path)"
-  eval "$(pyenv init -)"
-  pyenv commands | grep -q virtualenv-init && eval "$(pyenv virtualenv-init -)"
-fi
-
-# Node (nvm)
+# pyenv (Python versions) and nvm (Node versions)
+command -v pyenv >/dev/null && eval "$(pyenv init - zsh)"
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-# Start an SSH agent only if none is running (macOS and most work setups provide one)
-[ -z "${SSH_AUTH_SOCK:-}" ] && eval "$(ssh-agent -s)" >/dev/null
-[ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
-
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
-
-# Your current machine ends with this line, which replaces the p10k prompt
-# with a plain one. Uncomment to keep that behaviour.
-# PROMPT='%n@%m %~ %# '
-
-# Machine-specific, work or secret settings go here (never committed).
-# On first install, your previous ~/.zshrc is moved into this file.
-[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+# This machine's own settings
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local

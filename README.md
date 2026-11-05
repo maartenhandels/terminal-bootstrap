@@ -26,14 +26,14 @@ Run it from macOS Terminal.app with iTerm2 **closed**, then open iTerm2. Re-runn
 | Shell | oh-my-zsh, powerlevel10k (classic style), `git` plugin |
 | Tools | `Brewfile`: iTerm2, Hack Nerd Font, gh, git-lfs, pyenv, wget |
 | Runtimes | pyenv + pyenv-virtualenv, nvm |
-| Dotfiles | `.zshrc`, `.zprofile`, `.p10k.zsh`, `.aliases` (symlinked to this folder) |
+| Dotfiles | `.zshrc`, `.zprofile`, `.p10k.zsh` (plain copies; this folder can be deleted afterwards) |
 | Git | Enables git-lfs; sets `init.defaultBranch=main` and `pager.branch=false` only if unset. Your `~/.gitconfig`, name and email are never replaced |
 
 ## On a work laptop (or any machine with existing settings)
 
 Nothing is thrown away:
 
-- Your previous `.zshrc` / `.zprofile` / `.aliases` are moved into `~/.zshrc.local` and
+- Your previous `.zshrc` / `.zprofile` are moved into `~/.zshrc.local` and
   `~/.zprofile.local`, which keep loading. Only lines that would load oh-my-zsh or
   powerlevel10k a second time are disabled. Review those files once after installing.
 - Current iTerm2 settings are exported before the import; the script prints the undo command.
@@ -52,8 +52,8 @@ Check your company's policy on installing tools and cloning personal repositorie
 
 Secrets and machine-only settings go in `~/.zshrc.local` / `~/.zprofile.local`, never in this repo.
 
-## Updating
+## Updating the snapshot
 
-Dotfiles are symlinks, so edits land here; commit and push. For iTerm2 changes, re-export from
-a machine and strip machine-specific keys, or point iTerm2 at this folder:
-*Settings → General → Settings → Load settings from a custom folder*.
+The installed files are plain copies, so editing `~/.zshrc` on a laptop doesn't change this repo.
+To update the snapshot, copy the changed file back into `shell/` (or re-export iTerm2 settings into
+`iterm/`), then commit and push.
