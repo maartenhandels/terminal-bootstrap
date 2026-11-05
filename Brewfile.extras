@@ -1,0 +1,13 @@
+# Dev / project tools from the old laptop (optional: ./install.sh --extras)
+tap "ngrok/ngrok"
+brew "awscli"
+brew "docker-compose"
+brew "terraform"
+brew "flyway"
+brew "maven"
+brew "ant"
+brew "postgresql@14"
+brew "postgis"
+brew "redis"
+cask "ngrok"
+cask "libreoffice"
