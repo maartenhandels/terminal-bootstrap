@@ -95,7 +95,7 @@ put shell/zprofile "$HOME/.zprofile"
 put shell/p10k.zsh "$HOME/.p10k.zsh"
 
 say "Git preferences (your ~/.gitconfig, name and email are left alone)"
-command -v git-lfs >/dev/null && git lfs install >/dev/null && echo "  git-lfs enabled"
+command -v git-lfs >/dev/null && git lfs install --skip-repo >/dev/null && echo "  git-lfs enabled"
 [ -n "$(git config --global init.defaultBranch || true)" ] || git config --global init.defaultBranch main
 [ -n "$(git config --global pager.branch || true)" ]       || git config --global pager.branch false
 echo "  init.defaultBranch=$(git config --global init.defaultBranch), pager.branch=$(git config --global pager.branch) (only set if they were unset)"

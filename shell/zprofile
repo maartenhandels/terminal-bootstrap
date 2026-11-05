@@ -1,14 +1,8 @@
-# Homebrew: Apple Silicon (/opt/homebrew) or Intel (/usr/local)
+# Homebrew (Apple Silicon or Intel)
 for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
   [ -x "$_brew" ] && { eval "$("$_brew" shellenv)"; break; }
 done
 unset _brew
 
-# Java / Maven / JetBrains: only added if present on this machine
-[ -d "/Library/Java/JavaVirtualMachines/jdk-21.jdk" ] && export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-command -v mvn >/dev/null && export M2_HOME="$(brew --prefix maven)/libexec"
-export JETBRAINS_TOOL_BOX="$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
-export PATH="$PATH:$JETBRAINS_TOOL_BOX${JAVA_HOME:+:$JAVA_HOME/bin}${M2_HOME:+:$M2_HOME/bin}"
-
-# Machine-specific or work settings (your previous ~/.zprofile is moved here on first install)
-[ -f "$HOME/.zprofile.local" ] && source "$HOME/.zprofile.local"
+# This machine's own settings
+[ -f ~/.zprofile.local ] && source ~/.zprofile.local
