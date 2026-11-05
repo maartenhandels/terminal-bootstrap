@@ -119,7 +119,10 @@ fi
 
 say "Done. Open a new iTerm2 window."
 echo "  Machine-only / work / secret settings: ~/.zshrc.local, ~/.zprofile.local"
-if [ -d "$BACKUP" ]; then :
+if [ -d "$BACKUP" ]; then
   echo "  Originals backed up to $BACKUP"
-  [ -f "$BACKUP/iterm2-prefs.plist" ] && echo "  Undo iTerm2 import: defaults import com.googlecode.iterm2 $BACKUP/iterm2-prefs.plist"
+  if [ -f "$BACKUP/iterm2-prefs.plist" ]; then
+    echo "  Undo iTerm2 import: defaults import com.googlecode.iterm2 $BACKUP/iterm2-prefs.plist"
+  fi
 fi
+exit 0
