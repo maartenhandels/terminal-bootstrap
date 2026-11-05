@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Rebuilds the terminal setup on a new Mac. Safe to re-run.
-# Usage: ./install.sh [--extras]
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKUP="$HOME/.terminal-bootstrap-backup/$(date +%Y%m%d-%H%M%S)"
@@ -20,7 +19,6 @@ say "Homebrew"
 command -v brew >/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 eval "$(/opt/homebrew/bin/brew shellenv)"
 brew bundle --file="$DIR/Brewfile"
-[[ "${1:-}" == "--extras" ]] && brew bundle --file="$DIR/Brewfile.extras"
 
 say "oh-my-zsh + powerlevel10k"
 [ -d "$HOME/.oh-my-zsh" ] || RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"

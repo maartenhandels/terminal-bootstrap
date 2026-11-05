@@ -7,8 +7,7 @@ Rebuilds my iTerm2 + zsh setup on a new Mac. No secrets, passwords or keys are s
 ```bash
 git clone <this repo> ~/terminal-bootstrap   # or copy the folder over
 cd ~/terminal-bootstrap
-./install.sh            # core terminal setup
-./install.sh --extras   # also installs optional tools (pandoc, nmap, postgres, terraform, awscli, ...)
+./install.sh
 ```
 
 Run it with iTerm2 **closed** (run it from macOS Terminal.app), then open iTerm2.
