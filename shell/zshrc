@@ -24,7 +24,8 @@ export NVM_DIR="$HOME/.nvm"
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-eval "$(ssh-agent -s)" >/dev/null
+# Start an SSH agent only if none is running (macOS and most work setups provide one)
+[ -z "${SSH_AUTH_SOCK:-}" ] && eval "$(ssh-agent -s)" >/dev/null
 [ -f "$HOME/.aliases" ] && source "$HOME/.aliases"
 
 export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
@@ -33,5 +34,6 @@ export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
 # with a plain one. Uncomment to keep that behaviour.
 # PROMPT='%n@%m %~ %# '
 
-# Machine-specific or secret stuff goes here (never committed)
+# Machine-specific, work or secret settings go here (never committed).
+# On first install, your previous ~/.zshrc is moved into this file.
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
